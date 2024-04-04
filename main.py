@@ -1,10 +1,9 @@
 from pyspark.sql import SparkSession
 
-
 def main():
     spark = SparkSession.builder.appName("lab_dados") \
         .config('spark.jars.packages', 'org.postgresql:postgresql:42.7.3') \
-            .getOrCreate()
+        .getOrCreate()
     
     public_sales = spark.read.format("jdbc") \
         .option("url", "jdbc:postgresql://dpg-co5jfb4f7o1s73a319ag-a.oregon-postgres.render.com:5432/fatorv") \
