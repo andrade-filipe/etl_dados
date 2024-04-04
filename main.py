@@ -82,19 +82,39 @@ def printTableInfo(table):
     
 def getDmDates(spark):
     public_sales = getPublicSales(spark)
-    dates = public_sales.select("date")
+    dates = public_sales.select("date", "sales_id")
     
     dm_dates = dates.select(year("date").alias("year"),
                             month("date").alias("month"),
                             dayofmonth("date").alias("day"),
-                            quarter("date").alias("quarter"))
+                            quarter("date").alias("quarter"),
+                            'sales_id')
     
     dm_dates = dm_dates.withColumn("sk_date", monotonically_increasing_id())
     return dm_dates
+
+def getDmStates(spark):
+    public_customers = getPublicCustomers(spark)
+    customer_state = public_customers.select('customer_id', 'state')
+    
+    public_sellers = getPublicSellers(spark)
+    seller_state = public_sellers.select('seller_id', 'state')
+    
+    public_suppliers = getPublicSuppliers(spark)
+    suppliers_state = public_suppliers.select('supplier_id', 'state')
+    
+    dm_states = dm_states.withColumn("customer_id", public_customers['customers_id'])
+    dm_states = dm_states.withColumn("seller_id", public_sellers['seller_id'])
+    dm_states = dm_states.withColumn("supplier_id", public_suppliers['supplier_id'])
+    dm_states = dm_states.withColumn("state", customer_state['state'] \
+                                     .union(seller_state['state']) \
+                                     .union(suppliers_state['state']))
+    
+    return dm_states
     
 def getDmSellers(spark):
     public_sellers = getPublicSellers(spark)
-    data = public_sellers.select('seller_id', 'seller_name')
+    data = public_sellers.select('seller_id', 'seller_name', 'tx_commission')
     data = data.withColumn("sk_seller", monotonically_increasing_id())
     return data
 
@@ -116,8 +136,24 @@ def getDmCategories(spark):
     data = data.withColumn("sk_category", monotonically_increasing_id())
     return data
 
-# public_products = getPublicProducts(spark)
-# public_sales_items = getPublicSalesItems(spark)
+def getDmProducts(spark):
+    public_products = getPublicProducts(spark)
+    data = public_products.select('product_id', 'product_name', 'price')
+    data = data.withColumn("sk_product", monotonically_increasing_id())
+    return data
+
+def getDmSales(spark):
+    public_sales = getPublicSales(spark)
+    data = public_sales.select('sales_id', 'total_price')
+    data = data.withColumn("sk_sales", monotonically_increasing_id())
+    return data
+
+def getDmSalesItems(spark):
+    public_sales_items = getPublicSalesItems(spark)
+    data = public_sales_items.select('sales_id', 'quantity', 'price', 'product_id')
+    data = data.withColumn("sk_sales_items", monotonically_increasing_id())
+    return data
+
 def main():
     spark = SparkSession.builder.appName("lab_dados") \
         .config('spark.jars.packages', 'org.postgresql:postgresql:42.7.3') \
@@ -126,17 +162,29 @@ def main():
     dm_dates = getDmDates(spark)
     dm_dates.show()
     
-    dm_sellers = getDmSellers(spark)
-    dm_sellers.show()
+    # dm_sellers = getDmSellers(spark)
+    # dm_sellers.show()
     
-    dm_suppliers = getDmSuppliers(spark)
-    dm_suppliers.show()
+    # dm_suppliers = getDmSuppliers(spark)
+    # dm_suppliers.show()
     
-    dm_customers = getDmCustomers(spark)
-    dm_customers.show()
+    # dm_customers = getDmCustomers(spark)
+    # dm_customers.show()
     
-    dm_categories = getDmCategories(spark)
-    dm_categories.show()
+    # dm_categories = getDmCategories(spark)
+    # dm_categories.show()
+    
+    # dm_products = getDmProducts(spark)
+    # dm_products.show()
+    
+    # dm_sales = getDmSales(spark)
+    # dm_sales.show()
+    
+    # dm_sales_items = getDmSalesItems(spark)
+    # dm_sales_items.show()
+    
+    dm_states = getDmStates(spark)
+    dm_states.show()
     
 if __name__ == "__main__":
     main()
