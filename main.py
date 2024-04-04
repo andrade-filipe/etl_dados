@@ -1,5 +1,18 @@
 from pyspark.sql import SparkSession
 
+# • Produtos mais vendidos
+# • Faturamento total
+# • Faturamento por categoria e por produto
+# • Maiores comissões de vendedores
+# • Quantidade de Fornecedores por estado
+# • Quantidade de clientes por estado
+# • Todas as representações devem estar por ano, trimestre e mês.
+# • Todas as datas devem estar no formato YYYYMMDD
+# • Todos os textos precisam estar em maiúsculo
+# • Embora não esteja no sistema OLTP, no DW será preciso criar um campo "region" para guardar a região
+# do estado.
+# • É preciso calcular e armazenar o subtotal por item de venda.
+
 def getPublicCategories(spark):
     return spark.read.format("jdbc") \
         .option("url", "jdbc:postgresql://dpg-co5jfb4f7o1s73a319ag-a.oregon-postgres.render.com:5432/fatorv") \
