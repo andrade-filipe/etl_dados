@@ -1,4 +1,5 @@
 from pyspark.sql import SparkSession
+from pyspark.sql.functions import year, month, dayofmonth, quarter, monotonically_increasing_id
 
 # • Produtos mais vendidos
 # • Faturamento total
@@ -76,27 +77,66 @@ def getPublicSuppliers(spark):
         .option("password", "vW36eDzFKnl2h2ZFCWo7eqgVth9gMC4x") \
         .load()
 
+def printTableInfo(table):
+    table.printSchema()
+    
+def getDmDates(spark):
+    public_sales = getPublicSales(spark)
+    dates = public_sales.select("date")
+    
+    dm_dates = dates.select(year("date").alias("year"),
+                            month("date").alias("month"),
+                            dayofmonth("date").alias("day"),
+                            quarter("date").alias("quarter"))
+    
+    dm_dates = dm_dates.withColumn("sk_date", monotonically_increasing_id())
+    return dm_dates
+    
+def getDmSellers(spark):
+    public_sellers = getPublicSellers(spark)
+    data = public_sellers.select('seller_id', 'seller_name')
+    data = data.withColumn("sk_seller", monotonically_increasing_id())
+    return data
+
+def getDmSuppliers(spark):
+    public_suppliers = getPublicSuppliers(spark)
+    data = public_suppliers.select('supplier_id', 'supplier_name')
+    data = data.withColumn("sk_supplier", monotonically_increasing_id())
+    return data
+
+def getDmCustomers(spark):
+    public_customers = getPublicCustomers(spark)
+    data = public_customers.select('customer_id', 'customer_name')
+    data = data.withColumn("sk_customer", monotonically_increasing_id())
+    return data
+
+def getDmCategories(spark):
+    public_categories = getPublicCategories(spark)
+    data = public_categories.select('category_id', 'category_name')
+    data = data.withColumn("sk_category", monotonically_increasing_id())
+    return data
+
+# public_products = getPublicProducts(spark)
+# public_sales_items = getPublicSalesItems(spark)
 def main():
     spark = SparkSession.builder.appName("lab_dados") \
         .config('spark.jars.packages', 'org.postgresql:postgresql:42.7.3') \
         .getOrCreate()
     
-    public_categories = getPublicCategories(spark)
-    public_customers = getPublicCustomers(spark)
-    public_products = getPublicProducts(spark)
-    public_sales = getPublicSales(spark)
-    public_sales_items = getPublicSalesItems(spark)
-    public_sellers = getPublicSellers(spark)
-    public_suppliers = getPublicSuppliers(spark)
-        
+    dm_dates = getDmDates(spark)
+    dm_dates.show()
     
-    public_categories.printSchema()
-    public_customers.printSchema()
-    public_products.printSchema()
-    public_sales.printSchema()
-    public_sales_items.printSchema()
-    public_sellers.printSchema()
-    public_suppliers.printSchema()
+    dm_sellers = getDmSellers(spark)
+    dm_sellers.show()
+    
+    dm_suppliers = getDmSuppliers(spark)
+    dm_suppliers.show()
+    
+    dm_customers = getDmCustomers(spark)
+    dm_customers.show()
+    
+    dm_categories = getDmCategories(spark)
+    dm_categories.show()
     
 if __name__ == "__main__":
     main()
