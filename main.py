@@ -93,24 +93,41 @@ def getDmDates(spark):
     dm_dates = dm_dates.withColumn("sk_date", monotonically_increasing_id())
     return dm_dates
 
-def getDmStates(spark):
+def getDmStates(spark, table):
     public_customers = getPublicCustomers(spark)
     customer_state = public_customers.select('customer_id', 'state')
+    customer_state = customer_state.withColumn('sk_state_customer', monotonically_increasing_id())
     
     public_sellers = getPublicSellers(spark)
     seller_state = public_sellers.select('seller_id', 'state')
+    seller_state = seller_state.withColumn('sk_state_seller', monotonically_increasing_id())
     
     public_suppliers = getPublicSuppliers(spark)
     suppliers_state = public_suppliers.select('supplier_id', 'state')
+    suppliers_state = suppliers_state.withColumn('sk_state_supplier', monotonically_increasing_id())
     
-    dm_states = dm_states.withColumn("customer_id", public_customers['customers_id'])
-    dm_states = dm_states.withColumn("seller_id", public_sellers['seller_id'])
-    dm_states = dm_states.withColumn("supplier_id", public_suppliers['supplier_id'])
-    dm_states = dm_states.withColumn("state", customer_state['state'] \
-                                     .union(seller_state['state']) \
-                                     .union(suppliers_state['state']))
+    if(table == "customer_state"):
+        dm_states = customer_state
+    elif(table == "seller_state"):
+        dm_states = seller_state
+    elif(table == "suppliers_state"):
+        dm_states = suppliers_state
     
     return dm_states
+
+def getFtSales(spark):
+    public_sales = getPublicSales(spark)
+    sales_info = public_sales.select('sales_id', 'total_price', 'customer_id', 'seller_id')
+    
+    ft_sales = sales_info
+    ft_sales = ft_sales.withColumn('sk_date', monotonically_increasing_id())
+    ft_sales = ft_sales.withColumn('sk_supplier', monotonically_increasing_id())
+    ft_sales = ft_sales.withColumn('sk_sales_items', monotonically_increasing_id())
+    ft_sales = ft_sales.withColumn('sk_state_customer', monotonically_increasing_id())
+    ft_sales = ft_sales.withColumn('sk_state_supplier', monotonically_increasing_id())
+    ft_sales = ft_sales.withColumn('sk_state_seller', monotonically_increasing_id())
+
+    return ft_sales
     
 def getDmSellers(spark):
     public_sellers = getPublicSellers(spark)
@@ -162,29 +179,38 @@ def main():
     dm_dates = getDmDates(spark)
     dm_dates.show()
     
-    # dm_sellers = getDmSellers(spark)
-    # dm_sellers.show()
+    dm_sellers = getDmSellers(spark)
+    dm_sellers.show()
     
-    # dm_suppliers = getDmSuppliers(spark)
-    # dm_suppliers.show()
+    dm_suppliers = getDmSuppliers(spark)
+    dm_suppliers.show()
     
-    # dm_customers = getDmCustomers(spark)
-    # dm_customers.show()
+    dm_customers = getDmCustomers(spark)
+    dm_customers.show()
     
-    # dm_categories = getDmCategories(spark)
-    # dm_categories.show()
+    dm_categories = getDmCategories(spark)
+    dm_categories.show()
     
-    # dm_products = getDmProducts(spark)
-    # dm_products.show()
+    dm_products = getDmProducts(spark)
+    dm_products.show()
     
-    # dm_sales = getDmSales(spark)
-    # dm_sales.show()
+    dm_sales = getDmSales(spark)
+    dm_sales.show()
     
-    # dm_sales_items = getDmSalesItems(spark)
-    # dm_sales_items.show()
+    dm_sales_items = getDmSalesItems(spark)
+    dm_sales_items.show()
     
-    dm_states = getDmStates(spark)
+    dm_states = getDmStates(spark, "customer_state")
     dm_states.show()
+    
+    dm_states_2 = getDmStates(spark, "suppliers_state")
+    dm_states_2.show()
+    
+    dm_states_3 = getDmStates(spark, "seller_state")
+    dm_states_3.show()
+    
+    ft_sales = getFtSales(spark)
+    ft_sales.printSchema()
     
 if __name__ == "__main__":
     main()
