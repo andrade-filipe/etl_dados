@@ -122,7 +122,6 @@ def getFtSales(spark):
     ft_sales = sales_info
     ft_sales = ft_sales.withColumn('sk_date', monotonically_increasing_id())
     ft_sales = ft_sales.withColumn('sk_supplier', monotonically_increasing_id())
-    ft_sales = ft_sales.withColumn('sk_sales_items', monotonically_increasing_id())
     ft_sales = ft_sales.withColumn('sk_state_customer', monotonically_increasing_id())
     ft_sales = ft_sales.withColumn('sk_state_supplier', monotonically_increasing_id())
     ft_sales = ft_sales.withColumn('sk_state_seller', monotonically_increasing_id())
