@@ -79,6 +79,46 @@ def getPublicSuppliers(spark):
 
 def printTableInfo(table):
     table.printSchema()
+
+def getFtSales(spark):
+    public_sales_items = getDmSalesItems(spark)
+    sales_items_info = public_sales_items.select('sk_sales_items', 'sales_id', 'product_id')
+    
+    public_dates = getDmDates(spark)
+    dates = public_dates.select('sk_date')
+    
+    public_sellers = getDmSellers(spark)
+    sellers = public_sellers.select('seller_id')
+    
+    public_customers = getDmCustomers(spark)
+    customers = public_customers.select('customer_id')
+    
+    public_categories = getDmCategories(spark)
+    categories = public_categories.select('category_id')
+    
+    public_suppliers = getDmSuppliers(spark)
+    suppliers = public_suppliers.select('supplier_id')
+    
+    public_state_sellers = getDmStates(spark, "seller_state")
+    sellers_state = public_state_sellers.select('sk_state_seller')
+    
+    public_state_suppliers = getDmStates(spark, "suppliers_state")
+    suppliers_state = public_state_suppliers.select('sk_state_supplier')
+    
+    public_state_customers = getDmStates(spark, "customer_state")
+    customers_state = public_state_customers.select('sk_state_customer')
+    
+    ft_sales = sales_items_info
+    ft_sales_join_date = ft_sales.join(dates, ft_sales['sales_id'] - 1 == dates['sk_date'])
+    ft_sales_join_sellers = ft_sales_join_date.join(sellers, ft_sales_join_date['sales_id'] == sellers['seller_id'])
+    ft_sales_join_customers = ft_sales_join_sellers.join(customers, ft_sales_join_sellers['sales_id'] == customers['customer_id'])
+    ft_sales_join_categories = ft_sales_join_customers.join(categories, ft_sales_join_customers['product_id'] == categories['category_id'])
+    ft_sales_join_suppliers = ft_sales_join_categories.join(suppliers, ft_sales_join_categories['product_id'] == suppliers['supplier_id'])
+    ft_sales_join_sellers_state = ft_sales_join_suppliers.join(sellers_state, ft_sales_join_suppliers['seller_id'] - 1 == sellers_state['sk_state_seller'])
+    ft_sales_join_suppliers_state = ft_sales_join_sellers_state.join(suppliers_state, ft_sales_join_sellers_state['supplier_id'] - 1 == suppliers_state['sk_state_supplier'])
+    ft_sales_join_customers_state = ft_sales_join_suppliers_state.join(customers_state, ft_sales_join_suppliers_state['customer_id'] - 1 == customers_state['sk_state_customer'])
+    ft_sales = ft_sales_join_customers_state
+    return ft_sales
     
 def getDmDates(spark):
     public_sales = getPublicSales(spark)
@@ -114,19 +154,6 @@ def getDmStates(spark, table):
         dm_states = suppliers_state
     
     return dm_states
-
-def getFtSales(spark):
-    public_sales = getPublicSales(spark)
-    sales_info = public_sales.select('sales_id', 'total_price', 'customer_id', 'seller_id')
-    
-    ft_sales = sales_info
-    ft_sales = ft_sales.withColumn('sk_date', monotonically_increasing_id())
-    ft_sales = ft_sales.withColumn('sk_supplier', monotonically_increasing_id())
-    ft_sales = ft_sales.withColumn('sk_state_customer', monotonically_increasing_id())
-    ft_sales = ft_sales.withColumn('sk_state_supplier', monotonically_increasing_id())
-    ft_sales = ft_sales.withColumn('sk_state_seller', monotonically_increasing_id())
-
-    return ft_sales
     
 def getDmSellers(spark):
     public_sellers = getPublicSellers(spark)
@@ -174,42 +201,44 @@ def main():
     spark = SparkSession.builder.appName("lab_dados") \
         .config('spark.jars.packages', 'org.postgresql:postgresql:42.7.3') \
         .getOrCreate()
+        
     
-    dm_dates = getDmDates(spark)
-    dm_dates.show()
     
-    dm_sellers = getDmSellers(spark)
-    dm_sellers.show()
+    # dm_dates = getDmDates(spark)
+    # dm_dates.show()
     
-    dm_suppliers = getDmSuppliers(spark)
-    dm_suppliers.show()
+    # dm_sellers = getDmSellers(spark)
+    # dm_sellers.show()
     
-    dm_customers = getDmCustomers(spark)
-    dm_customers.show()
+    # dm_suppliers = getDmSuppliers(spark)
+    # dm_suppliers.show()
     
-    dm_categories = getDmCategories(spark)
-    dm_categories.show()
+    # dm_customers = getDmCustomers(spark)
+    # dm_customers.show()
     
-    dm_products = getDmProducts(spark)
-    dm_products.show()
+    # dm_categories = getDmCategories(spark)
+    # dm_categories.show()
     
-    dm_sales = getDmSales(spark)
-    dm_sales.show()
+    # dm_products = getDmProducts(spark)
+    # dm_products.show()
     
-    dm_sales_items = getDmSalesItems(spark)
-    dm_sales_items.show()
+    # dm_sales = getDmSales(spark)
+    # dm_sales.show()
     
-    dm_states = getDmStates(spark, "customer_state")
-    dm_states.show()
+    # dm_sales_items = getDmSalesItems(spark)
+    # dm_sales_items.show(100)
     
-    dm_states_2 = getDmStates(spark, "suppliers_state")
-    dm_states_2.show()
+    # dm_states = getDmStates(spark, "customer_state")
+    # dm_states.show()
     
-    dm_states_3 = getDmStates(spark, "seller_state")
-    dm_states_3.show()
+    # dm_states_2 = getDmStates(spark, "suppliers_state")
+    # dm_states_2.show()
+    
+    # dm_states_3 = getDmStates(spark, "seller_state")
+    # dm_states_3.show()
     
     ft_sales = getFtSales(spark)
-    ft_sales.printSchema()
+    ft_sales.show(100)
     
 if __name__ == "__main__":
     main()
